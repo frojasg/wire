@@ -53,8 +53,9 @@ import routeguide.RouteGuideProto.RouteSummary
 class MockRouteGuideService : RouteGuideGrpc.RouteGuideImplBase(), TestRule, ServerInterceptor {
   private lateinit var server: Server
   private lateinit var streamObserver: StreamObserver<Any>
-  private var lastRequestHeaders: Metadata? = null
+  public var lastRequestHeaders: Metadata? = null
   private var nextResponseHeaders: Map<String, String> = mapOf()
+
   private val script = ArrayDeque<Action>()
   private val scriptEmpty = Throwable("script is empty")
   private val scriptResults = Channel<Throwable>(capacity = UNLIMITED)
@@ -234,6 +235,8 @@ class MockRouteGuideService : RouteGuideGrpc.RouteGuideImplBase(), TestRule, Ser
     next: ServerCallHandler<ReqT, RespT>,
   ): Listener<ReqT> {
     lastRequestHeaders = requestHeaders
+
+
     return next.startCall(
       object : SimpleForwardingServerCall<ReqT, RespT>(call) {
         override fun sendHeaders(responseHeaders: Metadata) {
@@ -335,7 +338,7 @@ class MockRouteGuideService : RouteGuideGrpc.RouteGuideImplBase(), TestRule, Ser
         result[key] = value
       }
     }
-    lastRequestHeaders = null
+    // lastRequestHeaders = null
     return result
   }
 

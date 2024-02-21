@@ -201,6 +201,30 @@ class GrpcClientTest {
     assertThat(feature).isEqualTo(Feature(name = "tree at 5,6"))
   }
 
+
+  @Test
+  fun testBased64CanBeReadByBINARY_BYTE_MARSHALLER() {
+    mockService.enqueue(ReceiveCall("/routeguide.RouteGuide/GetFeature"))
+    mockService.enqueueReceivePoint(latitude = 5, longitude = 6)
+    mockService.enqueue(ReceiveComplete)
+    mockService.enqueueSendFeature(name = "tree at 5,6")
+    mockService.enqueue(SendCompleted)
+
+    val grpcCall = routeGuideService.GetFeature()
+    grpcCall.requestMetadata = grpcCall.requestMetadata.toMutableMap().apply {
+      this["point-bin"] = Point(latitude = 5, longitude = 6).encodeByteString().base64()
+    }
+    val feature = grpcCall.executeBlocking(Point(latitude = 5, longitude = 6))
+
+    assertThat(feature).isEqualTo(Feature(name = "tree at 5,6"))
+    val key = Metadata.Key.of("point-bin", Metadata.BINARY_BYTE_MARSHALLER);
+    val res = mockService.lastRequestHeaders!!.get(key)!!
+    val p2 = Point.ADAPTER.decode(res)
+
+    assertThat(p2).isEqualTo("asdasd")
+  }
+
+
   @Test
   fun requestResponseCallback() {
     mockService.enqueue(ReceiveCall("/routeguide.RouteGuide/GetFeature"))
